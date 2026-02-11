@@ -19,16 +19,17 @@
                 <form wire:submit.prevent="store">
                     <div class="mb-3">
                         <label class="small fw-bold">Judul Buku</label>
-                        <input type="text" class="form-control rounded-3" wire:model="judul" placeholder="Masukkan judul lengkap">
+                        <input type="text" class="form-control rounded-3 shadow-sm" wire:model="judul" placeholder="Masukkan judul lengkap">
                         @error('judul') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
 
                     <div class="mb-3">
                         <label class="small fw-bold">Kategori</label>
-                        <select class="form-select rounded-3" wire:model="kategori_id">
+                        <select class="form-select rounded-3 shadow-sm" wire:model="kategori_id">
                             <option value="">Pilih Kategori</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->nama }}</option>
+                            {{-- PERBAIKAN: Menggunakan $kategoris dan kolom 'nama' sesuai migration --}}
+                            @foreach($kategoris as $kat)
+                                <option value="{{ $kat->id }}">{{ $kat->nama }}</option>
                             @endforeach
                         </select>
                         @error('kategori_id') <small class="text-danger">{{ $message }}</small> @enderror
@@ -37,12 +38,12 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">Penulis</label>
-                            <input type="text" class="form-control rounded-3" wire:model="penulis">
+                            <input type="text" class="form-control rounded-3 shadow-sm" wire:model="penulis">
                             @error('penulis') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">Penerbit</label>
-                            <input type="text" class="form-control rounded-3" wire:model="penerbit">
+                            <input type="text" class="form-control rounded-3 shadow-sm" wire:model="penerbit">
                             @error('penerbit') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
                     </div>
@@ -50,17 +51,17 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">Tahun Terbit</label>
-                            <input type="number" class="form-control rounded-3" wire:model="tahun" placeholder="2024">
+                            <input type="number" class="form-control rounded-3 shadow-sm" wire:model="tahun" placeholder="2026">
                             @error('tahun') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">Jumlah Stok</label>
-                            <input type="number" class="form-control rounded-3" wire:model="jumlah">
+                            <input type="number" class="form-control rounded-3 shadow-sm" wire:model="jumlah">
                             @error('jumlah') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 shadow-sm mt-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 shadow-sm mt-2 fw-bold">
                         <i class="bi bi-plus-circle me-1"></i> Simpan Buku
                     </button>
                 </form>
@@ -80,7 +81,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($books as $b)
+                            @forelse($bukus as $b)
                             <tr>
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
@@ -95,26 +96,27 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">
+                                        {{-- PERBAIKAN: Memanggil kolom 'nama' dari relasi kategori --}}
                                         <i class="bi bi-tag-fill me-1"></i> {{ $b->kategori->nama ?? 'Umum' }}
                                     </span>
                                 </td>
                                 <td>
                                     <div class="fw-bold">{{ $b->jumlah }}</div>
-                                    <small class="text-muted">Ekslempar</small>
+                                    <small class="text-muted">Eksemplar</small>
                                 </td>
                                 <td class="text-center">
                                     <button wire:click="delete({{ $b->id }})" 
-                                            onclick="confirm('Yakin ingin menghapus buku ini?') || event.stopImmediatePropagation()"
+                                            wire:confirm="Yakin ingin menghapus buku '{{ $b->judul }}'?"
                                             class="btn btn-sm btn-outline-danger border-0">
-                                        <i class="bi bi-trash3-fill"></i>
+                                        <i class="bi bi-trash3-fill fs-5"></i>
                                     </button>
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="4" class="text-center py-5">
-                                    <img src="https://illustrations.popsy.co/white/reading-a-book.svg" alt="Empty" style="width: 150px;" class="mb-3">
-                                    <p class="text-muted">Belum ada koleksi buku yang terdaftar.</p>
+                                    <i class="bi bi-box-seam display-1 text-muted"></i>
+                                    <p class="text-muted mt-3">Belum ada koleksi buku yang terdaftar.</p>
                                 </td>
                             </tr>
                             @endforelse

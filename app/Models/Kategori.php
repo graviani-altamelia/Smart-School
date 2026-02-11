@@ -11,5 +11,14 @@ class Kategori extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'kategoris';
-    protected $fillable = ['id', 'nama', 'deskripsi'];
+
+    protected $fillable = ['nama', 'deskripsi'];
+
+    /**
+     * Relasi: Satu Kategori memiliki banyak Buku
+     */
+    public function bukus()
+    {
+        return $this->hasMany(Buku::class, 'kategori_id');
+    }
 }

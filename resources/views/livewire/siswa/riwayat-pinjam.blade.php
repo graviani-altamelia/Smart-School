@@ -2,7 +2,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold">Riwayat Peminjaman</h3>
-            <p class="text-muted">Pantau status buku yang kamu pinjam di sini.</p>
+            <p class="text-muted">Pantau status buku dan denda peminjamanmu di sini.</p>
         </div>
         <a href="{{ route('home') }}" wire:navigate class="btn btn-outline-primary rounded-pill">
             <i class="bi bi-plus-lg"></i> Pinjam Buku Lagi
@@ -18,7 +18,7 @@
                         <th>Tgl Pinjam</th>
                         <th>Batas Kembali</th>
                         <th>Status</th>
-                    </tr>
+                        <th>Denda</th> </tr>
                 </thead>
                 <tbody>
                     @forelse($riwayat as $item)
@@ -30,16 +30,27 @@
                         <td>{{ \Carbon\Carbon::parse($item->tgl_pinjam)->format('d M Y') }}</td>
                         <td>{{ \Carbon\Carbon::parse($item->tgl_kembali)->format('d M Y') }}</td>
                         <td>
-                            @if($item->status == 'dipinjam')
+                            {{-- PERBAIKAN: Gunakan status_peminjaman --}}
+                            @if($item->status_peminjaman == 'dipinjam')
                                 <span class="badge bg-warning-subtle text-warning px-3 rounded-pill">Sedang Dipinjam</span>
                             @else
                                 <span class="badge bg-success-subtle text-success px-3 rounded-pill">Sudah Kembali</span>
                             @endif
                         </td>
+                        <td>
+                            {{-- Menampilkan Denda dari Fungsi di Model --}}
+                            @if($item->status_peminjaman == 'dipinjam' && $item->hitungDenda() > 0)
+                                <span class="text-danger fw-bold">
+                                    Rp {{ number_format($item->hitungDenda(), 0, ',', '.') }}
+                                </span>
+                            @else
+                                <span class="text-muted small">0</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="text-center py-5">
+                        <td colspan="5" class="text-center py-5">
                             <img src="https://illustrations.popsy.co/gray/reading-book.svg" alt="Empty" style="height: 150px;">
                             <p class="mt-3 text-muted">Kamu belum pernah meminjam buku.</p>
                         </td>

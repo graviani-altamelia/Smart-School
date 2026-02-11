@@ -13,20 +13,23 @@ class Buku extends Component
     public function render()
     {
         return view('livewire.admin.buku', [
-            'books' => BukuModel::with('kategori')->latest()->get(),
-            'categories' => Kategori::all()
+            'bukus' => BukuModel::with('kategori')->latest()->get(),
+            'kategoris' => Kategori::all()
         ])->layout('layouts.app');
     }
 
     public function store()
     {
         $this->validate([
-            'judul' => 'required',
-            'kategori_id' => 'required',
+            'judul' => 'required|min:3',
+            'kategori_id' => 'required|exists:kategoris,id', // Memastikan ID kategori benar-benar ada
             'penulis' => 'required',
             'penerbit' => 'required',
-            'tahun' => 'required|numeric',
-            'jumlah' => 'required|numeric',
+            'tahun' => 'required|numeric|digits:4',
+            'jumlah' => 'required|numeric|min:1',
+        ], [
+            'kategori_id.required' => 'Silakan pilih kategori terlebih dahulu.',
+            'tahun.digits' => 'Tahun harus format 4 angka (Contoh: 2026).',
         ]);
 
         BukuModel::create([
@@ -38,13 +41,19 @@ class Buku extends Component
             'jumlah' => $this->jumlah,
         ]);
 
-        session()->flash('message', 'Buku berhasil ditambahkan!');
+        session()->flash('message', 'Buku "' . $this->judul . '" berhasil ditambahkan!');
+
         $this->reset();
     }
 
     public function delete($id)
     {
-        BukuModel::find($id)->delete();
-        session()->flash('message', 'Buku berhasil dihapus!');
+        $buku = BukuModel::find($id);
+        
+        if ($buku) {
+            $judulBuku = $buku->judul;
+            $buku->delete();
+            session()->flash('message', 'Buku "' . $judulBuku . '" berhasil dihapus!');
+        }
     }
 }

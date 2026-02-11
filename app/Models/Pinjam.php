@@ -7,26 +7,29 @@ use Carbon\Carbon;
 
 class Pinjam extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id', 
+        'buku_id', 
+        'judul', 
+        'tgl_pinjam', 
+        'tgl_kembali', 
+        'jumlah_pinjam', 
+        'status_peminjaman'
+    ];
 
     public function user() { return $this->belongsTo(User::class); }
     public function buku() { return $this->belongsTo(Buku::class); }
 
-    /**
-     * Menghitung denda secara otomatis
-     */
     public function hitungDenda()
     {
-        $batasKembali = Carbon::parse($this->tgl_kembali);
-        $hariIni = Carbon::now();
-
-        // Jika status sudah kembali, pakai tgl_realisasi_kembali (jika ada)
-        // Jika belum kembali, bandingkan dengan hari ini
-        if ($this->status == 'dipinjam' && $hariIni->gt($batasKembali)) {
-            $selisihHari = $hariIni->diffInDays($batasKembali);
-            return $selisihHari * 1000; // Contoh: Rp 1.000 per hari
+        if ($this->status_peminjaman === 'dipinjam') {
+            $batas = Carbon::parse($this->tgl_kembali)->startOfDay();
+            $hariIni = Carbon::now()->startOfDay();
+            
+            if ($hariIni->gt($batas)) {
+                return $hariIni->diffInDays($batas) * 1000;
+            }
         }
-
         return 0;
     }
 }

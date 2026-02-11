@@ -20,7 +20,6 @@
                     </a>
                 </div>
                 <div class="col-md-4 d-none d-md-block text-center">
-                    <img src="https://illustrations.popsy.co/white/reading-a-book.svg" style="height: 200px;" alt="Banner">
                 </div>
             </div>
         </div>

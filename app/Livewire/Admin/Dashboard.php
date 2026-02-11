@@ -11,15 +11,16 @@ class Dashboard extends Component
 {
     public function render()
     {
-        // data Statistik
         $totalSiswa = User::where('role', 'siswa')->count();
+
         $totalBuku  = Buku::sum('jumlah'); 
-        $totalPinjam = Pinjam::where('status', 'dipinjam')->count();
-        $terlambat   = Pinjam::where('status', 'dipinjam')
-                        ->where('tgl_kembali', '<', now())
+
+        $totalPinjam = Pinjam::where('status_peminjaman', 'dipinjam')->count();
+
+        $terlambat   = Pinjam::where('status_peminjaman', 'dipinjam')
+                        ->where('tgl_kembali', '<', now()->startOfDay())
                         ->count();
 
-        // data Aktivitas Terbaru
         $aktivitas = Pinjam::with(['user', 'buku'])->latest()->take(5)->get();
 
         return view('livewire.admin.dashboard', [
@@ -30,5 +31,4 @@ class Dashboard extends Component
             'aktivitas'   => $aktivitas
         ])->layout('layouts.app');
     }
-
 }

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB; 
 
 return new class extends Migration
 {
@@ -18,6 +19,21 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        DB::table('kategoris')->insert([
+            [
+                'nama' => 'Buku Pelajaran',
+                'deskripsi' => 'Koleksi buku materi sekolah',
+                'created_at' => now(),
+                'updated_at' => now()
+            ],
+            [
+                'nama' => 'Novel',
+                'deskripsi' => 'Koleksi buku fiksi dan cerita',
+                'created_at' => now(),
+                'updated_at' => now()
+            ],
+        ]); 
     }
 
     /**
