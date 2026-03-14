@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Buku;
 use App\Models\Pinjam;
+use App\Models\LogAktivitas as LogModel;
 use Illuminate\Support\Facades\Auth;
 
 class PinjamBuku extends Component
@@ -22,7 +23,7 @@ class PinjamBuku extends Component
     public function mount()
     {
         $this->tgl_pinjam = now()->format('Y-m-d');
-        $this->tgl_kembali = now()->addDays(7)->format('Y-m-d');
+        $this->tgl_kembali = now()->addDay()->format('Y-m-d'); 
     }
 
     public function updatingSearch()
@@ -33,6 +34,7 @@ class PinjamBuku extends Component
     public function tampilkanForm($id)
     {
         $this->buku_id = $id;
+        $this->tgl_kembali = now()->addDay()->format('Y-m-d');
     }
 
     public function batal()
@@ -44,12 +46,11 @@ class PinjamBuku extends Component
     {
         $this->validate([
             'buku_id' => 'required|exists:bukus,id',
-            'tgl_kembali' => 'required|after:tgl_pinjam',
+            'tgl_kembali' => 'required|after_or_equal:tgl_pinjam',
         ]);
 
         $buku = Buku::find($this->buku_id);
 
-        // Proteksi: Cek tunggakan
         $adaTunggakan = Pinjam::where('user_id', Auth::id())
             ->where('status_peminjaman', 'dipinjam')
             ->where('tgl_kembali', '<', now()->format('Y-m-d'))
@@ -68,36 +69,33 @@ class PinjamBuku extends Component
                 'tgl_pinjam'        => $this->tgl_pinjam,
                 'tgl_kembali'       => $this->tgl_kembali,
                 'jumlah_pinjam'     => 1,
-                'status_peminjaman' => 'dipinjam',
+                'status_peminjaman' => 'pending', // Kita set 'pending' agar divalidasi petugas
                 'denda'             => 0,
             ]);
 
             $buku->decrement('jumlah');
-            session()->flash('message', 'Berhasil! Cek status di Riwayat Saya.');
+
+            LogModel::add('Pinjam', 'Peminjaman', Auth::user()->name . ' meminjam buku: ' . $buku->judul);
+
+            session()->flash('message', 'Berhasil! Tunggu konfirmasi petugas ya.');
             $this->reset('buku_id');
+        } else {
+            session()->flash('error', 'Stok buku habis!');
         }
     }
 
     public function render()
     {
-        $stat_pinjam = Pinjam::where('user_id', Auth::id())
-            ->where('status_peminjaman', 'dipinjam')
-            ->count();
-
-        $stat_denda = Pinjam::where('user_id', Auth::id())
-            ->sum('denda');
-
-        $query = Buku::query();
-        if ($this->search) {
-            $query->where('judul', 'like', '%' . $this->search . '%')
-                  ->orWhere('penulis', 'like', '%' . $this->search . '%');
-        }
+        $data_user = Pinjam::where('user_id', Auth::id());
 
         return view('livewire.siswa.pinjam-buku', [
-            'bukus' => $query->latest()->paginate(12),
+            'bukus' => Buku::where('judul', 'like', '%' . $this->search . '%')
+                        ->orWhere('penulis', 'like', '%' . $this->search . '%')
+                        ->latest()->paginate(9),
             'bukuTerpilih' => $this->buku_id ? Buku::find($this->buku_id) : null,
-            'stat_pinjam' => $stat_pinjam,
-            'stat_denda' => $stat_denda
+            'stat_pinjam' => (clone $data_user)->where('status_peminjaman', 'dipinjam')->count(),
+            'stat_denda' => (clone $data_user)->sum('denda'),
+            'aktivitas_saya' => (clone $data_user)->latest()->take(5)->get() // Untuk Sidebar status
         ])->layout('layouts.app');
     }
 }

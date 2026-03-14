@@ -1,128 +1,114 @@
 <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-0">Kelola Koleksi Buku</h2>
-            <p class="text-muted">Input dan monitor stok buku perpustakaan</p>
+            <h2 class="fw-bold mb-0 text-dark">Manajemen Buku</h2>
+            <p class="text-muted small">Kelola koleksi buku perpustakaan</p>
         </div>
-        
-        @if (session()->has('message'))
-            <div class="alert alert-success py-2 px-4 shadow-sm rounded-pill mb-0">
-                <i class="bi bi-check-circle-fill me-2"></i> {{ session('message') }}
-            </div>
-        @endif
+        <input wire:model.live="search" type="text" class="form-control w-25 rounded-pill shadow-sm border-0 px-4" placeholder="Cari judul buku...">
     </div>
+
+    @if(session()->has('pesan'))
+        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
+            <i class="bi bi-check-circle-fill me-2"></i> {{ session('pesan') }}
+        </div>
+    @endif
 
     <div class="row">
         <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm border-0 p-4 rounded-4">
-                <h5 class="fw-bold mb-3">Tambah Buku Baru</h5>
-                <form wire:submit.prevent="store">
-                    <div class="mb-3">
-                        <label class="small fw-bold">Judul Buku</label>
-                        <input type="text" class="form-control rounded-3 shadow-sm" wire:model="judul" placeholder="Masukkan judul lengkap">
-                        @error('judul') <small class="text-danger">{{ $message }}</small> @enderror
-                    </div>
+            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 20px;">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-journal-plus text-warning me-2"></i>
+                    {{ $isEdit ? 'Edit Data Buku' : 'Tambah Buku Baru' }}
+                </h5>
+                
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">JUDUL BUKU</label>
+                    <input wire:model="judul" type="text" class="form-control bg-light border-0 py-2">
+                    @error('judul') <small class="text-danger">{{ $message }}</small> @enderror
+                </div>
 
-                    <div class="mb-3">
-                        <label class="small fw-bold">Kategori</label>
-                        <select class="form-select rounded-3 shadow-sm" wire:model="kategori_id">
-                            <option value="">Pilih Kategori</option>
-                            {{-- PERBAIKAN: Menggunakan $kategoris dan kolom 'nama' sesuai migration --}}
-                            @foreach($kategoris as $kat)
-                                <option value="{{ $kat->id }}">{{ $kat->nama }}</option>
-                            @endforeach
-                        </select>
-                        @error('kategori_id') <small class="text-danger">{{ $message }}</small> @enderror
-                    </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">PENULIS</label>
+                    <input wire:model="penulis" type="text" class="form-control bg-light border-0 py-2">
+                    @error('penulis') <small class="text-danger">{{ $message }}</small> @enderror
+                </div>
 
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="small fw-bold">Penulis</label>
-                            <input type="text" class="form-control rounded-3 shadow-sm" wire:model="penulis">
-                            @error('penulis') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="small fw-bold">Penerbit</label>
-                            <input type="text" class="form-control rounded-3 shadow-sm" wire:model="penerbit">
-                            @error('penerbit') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
-                    </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">KATEGORI BUKU</label>
+                    <select wire:model="kategori_id" class="form-select bg-light border-0 py-2">
+                        <option value="">Pilih Kategori</option>
+                        @foreach($semua_kategori as $kat)
+                            <option value="{{ $kat->id }}">{{ $kat->nama }}</option> 
+                        @endforeach
+                    </select>
+                    @error('kategori_id') <small class="text-danger">{{ $message }}</small> @enderror
+                </div>
 
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="small fw-bold">Tahun Terbit</label>
-                            <input type="number" class="form-control rounded-3 shadow-sm" wire:model="tahun" placeholder="2026">
-                            @error('tahun') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="small fw-bold">Jumlah Stok</label>
-                            <input type="number" class="form-control rounded-3 shadow-sm" wire:model="jumlah">
-                            @error('jumlah') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="small fw-bold text-muted">TAHUN</label>
+                        <input wire:model="tahun" type="text" class="form-control bg-light border-0 py-2" placeholder="2024">
                     </div>
+                    <div class="col-6 mb-3">
+                        <label class="small fw-bold text-muted">STOK</label>
+                        <input wire:model="jumlah" type="number" class="form-control bg-light border-0 py-2">
+                        @error('jumlah') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+                </div>
 
-                    <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 shadow-sm mt-2 fw-bold">
-                        <i class="bi bi-plus-circle me-1"></i> Simpan Buku
+                <div class="mt-2">
+                    <button wire:click="{{ $isEdit ? 'update' : 'simpan' }}" class="btn btn-warning w-100 py-2 fw-bold text-white shadow-sm rounded-3">
+                        {{ $isEdit ? 'SIMPAN PERUBAHAN' : 'TAMBAHKAN BUKU' }}
                     </button>
-                </form>
+                    @if($isEdit)
+                        <button wire:click="resetInput" class="btn btn-link w-100 text-muted mt-1 text-decoration-none small">Batal</button>
+                    @endif
+                </div>
             </div>
         </div>
 
         <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4 py-3">Informasi Buku</th>
-                                <th>Kategori</th>
-                                <th>Stok</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($bukus as $b)
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2 me-3">
-                                            <i class="bi bi-book-half fs-4"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">{{ $b->judul }}</div>
-                                            <div class="small text-muted">{{ $b->penulis }} | {{ $b->penerbit }} ({{ $b->tahun }})</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">
-                                        {{-- PERBAIKAN: Memanggil kolom 'nama' dari relasi kategori --}}
-                                        <i class="bi bi-tag-fill me-1"></i> {{ $b->kategori->nama ?? 'Umum' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-bold">{{ $b->jumlah }}</div>
-                                    <small class="text-muted">Eksemplar</small>
-                                </td>
-                                <td class="text-center">
-                                    <button wire:click="delete({{ $b->id }})" 
-                                            wire:confirm="Yakin ingin menghapus buku '{{ $b->judul }}'?"
-                                            class="btn btn-sm btn-outline-danger border-0">
-                                        <i class="bi bi-trash3-fill fs-5"></i>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="small text-muted fw-bold">
+                            <th class="ps-4 py-3">BUKU</th>
+                            <th>KATEGORI</th>
+                            <th class="text-center">STOK</th>
+                            <th class="text-center">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($semua_buku as $buku)
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">{{ $buku->judul }}</div>
+                                <div class="text-muted small">{{ $buku->penulis ?? 'Anonim' }} | {{ $buku->tahun ?? '-' }}</div>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-info-subtle text-info px-3">
+                                    {{ $buku->kategori->nama ?? 'Umum' }}
+                                </span>
+                            </td>
+                            <td class="text-center fw-bold">{{ $buku->jumlah }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <button wire:click="edit({{ $buku->id }})" class="btn btn-sm btn-light text-primary shadow-sm border me-1">
+                                        <i class="bi bi-pencil-fill"></i>
                                     </button>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center py-5">
-                                    <i class="bi bi-box-seam display-1 text-muted"></i>
-                                    <p class="text-muted mt-3">Belum ada koleksi buku yang terdaftar.</p>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                                    <button onclick="confirm('Hapus buku ini?') || event.stopImmediatePropagation()" wire:click="hapus({{ $buku->id }})" class="btn btn-sm btn-light text-danger shadow-sm border">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted italic">Data buku masih kosong.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

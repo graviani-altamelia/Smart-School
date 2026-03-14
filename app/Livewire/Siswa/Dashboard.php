@@ -7,56 +7,86 @@ use App\Models\Buku;
 use App\Models\Pinjam;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class Dashboard extends Component
 {
     use WithPagination;
 
     public $search = '';
-    public $selected_buku; 
+    public $showModal = false;
+    public $selectedBuku, $tgl_pinjam, $tgl_kembali, $jumlah_pinjam = 1;
 
     protected $paginationTheme = 'bootstrap';
 
-    public function updatingSearch()
+    // PENGAMAN: Mencegah Admin/Petugas masuk ke dashboard siswa
+    public function mount()
     {
-        $this->resetPage();
+        if (Auth::user()->role !== 'siswa') {
+            return redirect()->route('home');
+        }
     }
 
-    public function pilihBuku($id)
+    public function updatingSearch() { $this->resetPage(); }
+
+    public function pinjam($id)
     {
-        $this->selected_buku = Buku::find($id);
-        $this->dispatch('show-modal');
+        $this->selectedBuku = Buku::find($id);
+        
+        if (!$this->selectedBuku || $this->selectedBuku->jumlah <= 0) {
+            $this->dispatch('swal:error', message: 'Stok buku habis!');
+            return;
+        }
+
+        $this->tgl_pinjam = Carbon::now()->format('Y-m-d');
+        $this->tgl_kembali = Carbon::now()->addDays(7)->format('Y-m-d');
+        $this->jumlah_pinjam = 1;
+        
+        $this->showModal = true;
     }
 
-    public function pinjamBuku()
+    public function konfirmasiPinjam()
     {
-        if (!$this->selected_buku || $this->selected_buku->jumlah <= 0) {
+        $bukuDB = Buku::find($this->selectedBuku->id);
+
+        if ($this->jumlah_pinjam > $bukuDB->jumlah) {
+            $this->dispatch('swal:error', message: 'Stok tidak mencukupi!');
             return;
         }
 
         Pinjam::create([
             'user_id' => Auth::id(),
-            'buku_id' => $this->selected_buku->id,
-            'tgl_pinjam' => now(),
-            'tgl_kembali' => now()->addDays(7), 
-            'status' => 'dipinjam'
+            'buku_id' => $bukuDB->id,
+            'judul'   => $bukuDB->judul,
+            'tgl_pinjam' => $this->tgl_pinjam,
+            'tgl_kembali' => $this->tgl_kembali, 
+            'jumlah_pinjam' => $this->jumlah_pinjam,
+            'status_peminjaman' => 'pending' 
         ]);
 
-        $this->selected_buku->decrement('jumlah'); 
+        $bukuDB->update([
+            'jumlah' => $bukuDB->jumlah - $this->jumlah_pinjam
+        ]);
+
+        $this->showModal = false;
+        $this->search = ''; 
         
-        $this->dispatch('hide-modal'); 
-        session()->flash('message', 'Buku berhasil dipinjam!');
+        $this->dispatch('swal:success', message: 'Permintaan pinjam berhasil dikirim!');
     }
 
     public function render()
     {
-        $bukus = Buku::where('judul', 'like', '%' . $this->search . '%')
-                    ->orWhere('penulis', 'like', '%' . $this->search . '%')
-                    ->latest()
-                    ->paginate(8);
+        $bukus = Buku::where('judul', 'like', '%'.$this->search.'%')
+                     ->latest()
+                     ->paginate(8);
+
+        $peminjaman_terbaru = Pinjam::where('user_id', Auth::id())->get();
 
         return view('livewire.siswa.dashboard', [
-            'bukus' => $bukus
-        ])->layout('layouts.app');
+            'bukus' => $bukus,
+            'peminjaman_saya' => $peminjaman_terbaru->sortByDesc('created_at'),
+            'pinjam_aktif' => $peminjaman_terbaru->whereIn('status_peminjaman', ['pending', 'dipinjam'])->sum('jumlah_pinjam'),
+            'total_denda' => $peminjaman_terbaru->sum(fn($p) => method_exists($p, 'hitungDenda') ? $p->hitungDenda() : 0)
+        ])->layout('layouts.app'); // PASTIKAN file resources/views/layouts/app.blade.php ADA
     }
 }
