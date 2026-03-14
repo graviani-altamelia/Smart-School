@@ -1,5 +1,5 @@
 <div>
-    <x-slot:title>Login - Smart School</x-slot:title>
+    <x-slot:title>Masuk - Smart School</x-slot:title>
 
     <div class="auth-container">
         <div class="auth-card shadow-lg">
